@@ -2,7 +2,7 @@
 #include <ctime>
 #include <chrono>
 #include<omp.h>
-
+#include <fstream> 
 using namespace std;
 
 const int MAXN = 16;
@@ -90,24 +90,26 @@ int find_path_cost(vector<vector<int>>&matrix, vector<int>&arr)
 	}
 	return cost;
 }
-
+void printaj(vector<int> temp){
+	
+	for (int i=0; i<temp.size(); i++){
+		cout<<temp[i]<<" ";
+	} 
+	
+}
 vector<int> tsp_omp(vector<vector<int>>&matrix)
 {
 	int n = matrix.size();
-
 	int optimal_value = INF;
-	
 	vector<int>ans;
-	
 	vector<int>nodes;
-
 	long int k=fact[n-1];
-	
-	#pragma omp parallel private(nodes) shared(ans,optimal_value)
-	{
+	for(int i=1;i<n;i++)nodes.push_back(i);
 
-	  for(int i=1;i<n;i++)nodes.push_back(i);
-	  
+
+	#pragma omp parallel firstprivate(nodes) shared(ans,optimal_value)
+	{
+  
 	  int num = omp_get_num_threads();
 	  int id = omp_get_thread_num();
       
@@ -115,6 +117,7 @@ vector<int> tsp_omp(vector<vector<int>>&matrix)
 	  int extra = k%num;
 	 
 	  if (id<extra) {
+
         nodes = nth_permutation(nodes,(id)*(iter_per_thread+1));
 	    iter_per_thread=iter_per_thread+1;
 	  }
@@ -137,15 +140,21 @@ vector<int> tsp_omp(vector<vector<int>>&matrix)
 	  	  }
 	  	}
 	  	i++;
-	  	
-	  	next_permutation(nodes.begin(),nodes.end());
+		#pragma omp critical
+	  	{
+			for (int i=0; i< nodes.size(); i++){
+				cout<<"id : "<<id<<", node[i] : "<<nodes[i]<<", ";
+			}
+		cout<<endl;
+		}
+		
+		next_permutation(nodes.begin(),nodes.end());
 	  }
 	  while(i<iter_per_thread);
 	}
 	
-	return ans;	
+	return ans;
 }
-
 void print_matrix(vector<vector<int>>& matrix)
 {
 	int N = matrix.size();
